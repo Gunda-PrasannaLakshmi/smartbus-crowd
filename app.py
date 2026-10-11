@@ -1,7 +1,7 @@
 
 import streamlit as st
 import firebase_admin
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
 import pandas as pd
 from pathlib import Path
 
@@ -13,12 +13,16 @@ st.set_page_config(
 )
 
 # ---------------- FIREBASE CONNECTION ----------------
+
 @st.cache_resource
 def connect_firebase():
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(
-            options={"projectId": "smartbuscrowd"}
+        service_account_info = dict(
+            st.secrets["firebase_service_account"]
         )
+        cred = credentials.Certificate(service_account_info)
+        firebase_admin.initialize_app(cred)
+
     return firestore.client()
 
 
@@ -28,6 +32,7 @@ except Exception as e:
     st.error("Firebase connection failed.")
     st.code(str(e))
     st.stop()
+
 
 
 # ---------------- LOAD LOCATIONS ----------------
@@ -145,7 +150,7 @@ st.subheader("👥 Destination Crowd")
 @st.fragment(run_every=5)
 def show_crowd(location_name):
     try:
-        # First try a document whose ID equals the location name
+        st.write("DEBUG: Crowd function started")
         doc = db.collection("bus_stops").document(
             location_name
         ).get()
